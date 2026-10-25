@@ -1,0 +1,128 @@
+package com.example.util
+
+import android.media.audiofx.BassBoost
+import android.media.audiofx.Equalizer
+import android.media.audiofx.PresetReverb
+import android.media.audiofx.Virtualizer
+
+class NativeEqualizerHelper {
+
+    private var equalizer: Equalizer? = null
+    private var bassBoost: BassBoost? = null
+    private var virtualizer: Virtualizer? = null
+    private var presetReverb: PresetReverb? = null
+
+    fun attachToAudioSession(audioSessionId: Int) {
+        if (audioSessionId == 0) return
+        try {
+            release()
+
+            equalizer = Equalizer(0, audioSessionId).apply {
+                enabled = true
+            }
+
+            bassBoost = BassBoost(0, audioSessionId).apply {
+                enabled = true
+            }
+
+            virtualizer = Virtualizer(0, audioSessionId).apply {
+                enabled = true
+            }
+
+            presetReverb = PresetReverb(0, audioSessionId).apply {
+                enabled = true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setEnabled(enabled: Boolean) {
+        try {
+            equalizer?.enabled = enabled
+            bassBoost?.enabled = enabled
+            virtualizer?.enabled = enabled
+            presetReverb?.enabled = enabled
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setBassBoostStrength(strengthPercent: Int) {
+        try {
+            bassBoost?.let {
+                if (it.strengthSupported) {
+                    val strength = ((strengthPercent / 100f) * 1000).toInt().coerceIn(0, 1000).toShort()
+                    it.setStrength(strength)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setVirtualizerStrength(strengthPercent: Int) {
+        try {
+            virtualizer?.let {
+                if (it.strengthSupported) {
+                    val strength = ((strengthPercent / 100f) * 1000).toInt().coerceIn(0, 1000).toShort()
+                    it.setStrength(strength)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setReverbPreset(presetName: String) {
+        try {
+            presetReverb?.let {
+                val presetShort: Short = when (presetName.uppercase()) {
+                    "SMALL_ROOM" -> PresetReverb.PRESET_SMALLROOM
+                    "MEDIUM_HALL" -> PresetReverb.PRESET_MEDIUMHALL
+                    "LARGE_HALL" -> PresetReverb.PRESET_LARGEHALL
+                    "PLATE" -> PresetReverb.PRESET_PLATE
+                    else -> PresetReverb.PRESET_NONE
+                }
+                it.preset = presetShort
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setBandGain(bandIndex: Int, gainDb: Float) {
+        try {
+            equalizer?.let { eq ->
+                val numBands = eq.numberOfBands.toInt()
+                if (bandIndex in 0 until numBands) {
+                    val bandShort = bandIndex.toShort()
+                    val range = eq.bandLevelRange ?: shortArrayOf(-1500, 1500)
+                    val minMilliBel = range[0]
+                    val maxMilliBel = range[1]
+
+                    val targetMilliBel = (gainDb * 100f).toInt().coerceIn(minMilliBel.toInt(), maxMilliBel.toInt()).toShort()
+                    eq.setBandLevel(bandShort, targetMilliBel)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun release() {
+        try {
+            equalizer?.release()
+            bassBoost?.release()
+            virtualizer?.release()
+            presetReverb?.release()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            equalizer = null
+            bassBoost = null
+            virtualizer = null
+            presetReverb = null
+        }
+    }
+}

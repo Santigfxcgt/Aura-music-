@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Mic
@@ -95,6 +96,7 @@ fun NowPlayingScreen(
     onToggleFavorite: () -> Unit,
     onOpenQueue: () -> Unit,
     onOpenLyrics: () -> Unit,
+    onOpenEqualizer: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onCollapse)
@@ -187,7 +189,7 @@ fun NowPlayingScreen(
                     )
                 }
 
-                // Apple Music-style Frosted Audio Quality Badge
+                // Apple Music-style Frosted Audio Quality Badge (Clickable for 10-Band EQ)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -197,19 +199,21 @@ fun NowPlayingScreen(
                             GlassCardBorder,
                             RoundedCornerShape(20.dp)
                         )
+                        .clickable { onOpenEqualizer() }
                         .padding(horizontal = 14.dp, vertical = 6.dp)
-                        .testTag("audio_quality_badge")
+                        .testTag("audio_quality_badge"),
+                    contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Filled.GraphicEq,
-                            contentDescription = null,
+                            imageVector = Icons.Filled.Equalizer,
+                            contentDescription = "Abrir Ecualizador",
                             tint = if (track.isLossless) LosslessGold else Color.White,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = track.qualityFormat,
+                            text = "${track.qualityFormat} • EQ",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -263,7 +267,8 @@ fun NowPlayingScreen(
                 if (track.customMediaType == "VIDEO" && !track.customMediaUri.isNullOrBlank()) {
                     com.example.ui.components.LoopingVideoArtwork(
                         videoPathOrUri = track.customMediaUri,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        clipShape = RoundedCornerShape(22.dp)
                     )
                 } else {
                     TrackArtworkImage(

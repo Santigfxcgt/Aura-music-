@@ -195,7 +195,8 @@ fun MainScreen(
                     onCycleRepeat = { viewModel.cycleRepeatMode() },
                     onToggleFavorite = { viewModel.toggleFavorite(track.id) },
                     onOpenQueue = { viewModel.setQueueSheetVisible(true) },
-                    onOpenLyrics = { viewModel.setLyricsVisible(true) }
+                    onOpenLyrics = { viewModel.setLyricsVisible(true) },
+                    onOpenEqualizer = { viewModel.setEqualizerDialogVisible(true) }
                 )
             }
         }
@@ -236,7 +237,28 @@ fun MainScreen(
                 onCrossfadeChanged = { viewModel.setCrossfadeSec(it) },
                 isGapless = uiState.isGapless,
                 onGaplessChanged = { viewModel.setGaplessEnabled(it) },
+                onOpenProEqualizer = { viewModel.setEqualizerDialogVisible(true) },
                 onDismissRequest = { viewModel.setSettingsDialogVisible(false) }
+            )
+        }
+
+        // Pro 10-Band Equalizer Dialog
+        if (uiState.isEqualizerDialogVisible) {
+            com.example.ui.screens.EqualizerDialog(
+                isEnabled = uiState.isEqualizerEnabled,
+                onToggleEnabled = { viewModel.toggleEqualizerEnabled(it) },
+                eqBands = uiState.eqBands,
+                onBandChange = { bandIndex, gainDb -> viewModel.setEqBandGain(bandIndex, gainDb) },
+                bassBoostPercent = uiState.bassBoostPercent,
+                onBassBoostChange = { viewModel.setBassBoostPercent(it) },
+                virtualizerPercent = uiState.virtualizerPercent,
+                onVirtualizerChange = { viewModel.setVirtualizerPercent(it) },
+                reverbPreset = uiState.reverbPreset,
+                onReverbPresetChange = { viewModel.setReverbPreset(it) },
+                selectedPresetName = uiState.selectedEqPreset,
+                onSelectPreset = { viewModel.applyEqPreset(it) },
+                onResetEq = { viewModel.resetEqToFlat() },
+                onDismissRequest = { viewModel.setEqualizerDialogVisible(false) }
             )
         }
 

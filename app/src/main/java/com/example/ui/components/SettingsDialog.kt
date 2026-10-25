@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +61,7 @@ fun SettingsDialog(
     onCrossfadeChanged: (Int) -> Unit = {},
     isGapless: Boolean = true,
     onGaplessChanged: (Boolean) -> Unit = {},
+    onOpenProEqualizer: () -> Unit = {},
     onDismissRequest: () -> Unit
 ) {
     val qualities = listOf(
@@ -352,7 +354,36 @@ fun SettingsDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                // Equalizer Pro 10-Bands Button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0x338B5CF6))
+                        .border(1.dp, GlassCardBorder, RoundedCornerShape(14.dp))
+                        .clickable { onOpenProEqualizer() }
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
+                        .testTag("open_pro_equalizer_button"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Filled.Equalizer,
+                            contentDescription = null,
+                            tint = LosslessGold,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "🎛️ Abrir Ecualizador Pro (10 Bandas & Bass Boost)",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Button(
                     onClick = onDismissRequest,

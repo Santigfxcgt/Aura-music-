@@ -59,7 +59,14 @@ data class PlayerUiState(
     val playlists: List<PlaylistEntity> = emptyList(),
     val visualizerType: VisualizerType = VisualizerType.WAVEFORM_BARS,
     val crossfadeSec: Int = 3,
-    val isGapless: Boolean = true
+    val isGapless: Boolean = true,
+    val isEqualizerDialogVisible: Boolean = false,
+    val isEqualizerEnabled: Boolean = true,
+    val eqBands: List<Float> = listOf(6f, 5f, 3f, 0f, -2f, 2f, 4f, 5f, 6f, 7f),
+    val bassBoostPercent: Int = 60,
+    val virtualizerPercent: Int = 40,
+    val reverbPreset: String = "OFF",
+    val selectedEqPreset: String = "EDM / Electrónica"
 )
 
 class AuraPlayerViewModel(application: Application) : AndroidViewModel(application) {
@@ -102,6 +109,12 @@ class AuraPlayerViewModel(application: Application) : AndroidViewModel(applicati
     init {
         playerManager.onTrackCompleted = {
             handleTrackCompleted()
+        }
+        playerManager.onSkipToNext = {
+            playNext()
+        }
+        playerManager.onSkipToPrevious = {
+            playPrevious()
         }
 
         viewModelScope.launch {
@@ -218,6 +231,64 @@ class AuraPlayerViewModel(application: Application) : AndroidViewModel(applicati
     fun setGaplessEnabled(enabled: Boolean) {
         _uiState.value = _uiState.value.copy(isGapless = enabled)
         playerManager.setGaplessEnabled(enabled)
+    }
+
+    fun setEqualizerDialogVisible(visible: Boolean) {
+        _uiState.value = _uiState.value.copy(isEqualizerDialogVisible = visible)
+    }
+
+    fun toggleEqualizerEnabled(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(isEqualizerEnabled = enabled)
+        playerManager.setEqEnabled(enabled)
+    }
+
+    fun setEqBandGain(bandIndex: Int, gainDb: Float) {
+        val current = _uiState.value.eqBands.toMutableList()
+        if (bandIndex in current.indices) {
+            current[bandIndex] = gainDb
+            _uiState.value = _uiState.value.copy(
+                eqBands = current,
+                selectedEqPreset = "Personalizado"
+            )
+            playerManager.setEqBandGain(bandIndex, gainDb)
+        }
+    }
+
+    fun setBassBoostPercent(percent: Int) {
+        val p = percent.coerceIn(0, 100)
+        _uiState.value = _uiState.value.copy(bassBoostPercent = p)
+        playerManager.setBassBoostPercent(p)
+    }
+
+    fun setVirtualizerPercent(percent: Int) {
+        val p = percent.coerceIn(0, 100)
+        _uiState.value = _uiState.value.copy(virtualizerPercent = p)
+        playerManager.setVirtualizerPercent(p)
+    }
+
+    fun setReverbPreset(preset: String) {
+        _uiState.value = _uiState.value.copy(reverbPreset = preset)
+        playerManager.setReverbPreset(preset)
+    }
+
+    fun applyEqPreset(presetName: String) {
+        val gains = com.example.ui.screens.EQ_PRESETS_MAP[presetName]
+        if (gains != null) {
+            _uiState.value = _uiState.value.copy(
+                eqBands = gains,
+                selectedEqPreset = presetName
+            )
+            gains.forEachIndexed { index, gain ->
+                playerManager.setEqBandGain(index, gain)
+            }
+        }
+    }
+
+    fun resetEqToFlat() {
+        applyEqPreset("Plano")
+        setBassBoostPercent(0)
+        setVirtualizerPercent(0)
+        setReverbPreset("OFF")
     }
 
     fun autoEnhanceTrack(

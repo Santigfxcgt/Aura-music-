@@ -1,0 +1,6 @@
+{
+  "summary": "APK actualizada (39 MB) de la aplicación Aura Music con la experiencia Aurora Music Lock Screen & Media Notifications. Incluye sincronización perfecta de la sesión multimedia (MediaSession + MediaSessionService de AndroidX Media3) en la pantalla de bloqueo y centro de control, extracción de fotogramas estáticos para portadas en video/GIF, controles multimedia en segundo plano (Play, Pausa, Siguiente, Anterior, Búsqueda) y permiso POST_NOTIFICATIONS sin alterar en lo absoluto la interfaz gráfica interna de la aplicación.",
+  "updatedAt": "2026-10-25T00:46:00Z",
+  "requestFeedback": false,
+  "userFacing": true
+}
