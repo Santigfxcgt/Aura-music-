@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.PlaylistEntity
@@ -66,7 +67,8 @@ data class PlayerUiState(
     val bassBoostPercent: Int = 60,
     val virtualizerPercent: Int = 40,
     val reverbPreset: String = "OFF",
-    val selectedEqPreset: String = "EDM / Electrónica"
+    val selectedEqPreset: String = "EDM / Electrónica",
+    val deletingTrackConfirm: Track? = null
 )
 
 class AuraPlayerViewModel(application: Application) : AndroidViewModel(application) {
@@ -170,15 +172,26 @@ class AuraPlayerViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setStoragePermission(granted: Boolean) {
         _uiState.value = _uiState.value.copy(hasStoragePermission = granted)
-        if (granted) {
-            scanLocalAudio()
-        }
+        // No automatic scan upon entering the app or granting permission
     }
 
     fun scanLocalAudio() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isScanningLocalAudio = true)
             val scanned = localScanner.scanLocalAudioFiles()
+            rawLocalTracks = scanned
+            _uiState.value = _uiState.value.copy(
+                isScanningLocalAudio = false,
+                localAudioScannedCount = scanned.size
+            )
+            refreshTracksWithCustomMetadata()
+        }
+    }
+
+    fun scanFolder(treeUri: Uri) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isScanningLocalAudio = true)
+            val scanned = localScanner.scanFolderFiles(treeUri)
             rawLocalTracks = scanned
             _uiState.value = _uiState.value.copy(
                 isScanningLocalAudio = false,
@@ -493,6 +506,75 @@ class AuraPlayerViewModel(application: Application) : AndroidViewModel(applicati
     fun resetCustomTrack(trackId: String) {
         viewModelScope.launch {
             customMetadataRepo.resetToOriginal(trackId)
+            refreshTracksWithCustomMetadata()
+        }
+    }
+
+    fun requestDeleteTrackPermanently(track: Track) {
+        _uiState.value = _uiState.value.copy(deletingTrackConfirm = track)
+    }
+
+    fun cancelDeleteTrack() {
+        _uiState.value = _uiState.value.copy(deletingTrackConfirm = null)
+    }
+
+    fun confirmDeleteTrackPermanently() {
+        val track = _uiState.value.deletingTrackConfirm ?: return
+        viewModelScope.launch {
+            if (!track.contentUriString.isNullOrBlank()) {
+                try {
+                    val uri = android.net.Uri.parse(track.contentUriString)
+                    if (track.contentUriString.startsWith("content://")) {
+                        getApplication<Application>().contentResolver.delete(uri, null, null)
+                    } else if (track.contentUriString.startsWith("file://")) {
+                        val path = uri.path
+                        if (!path.isNullOrBlank()) {
+                            java.io.File(path).delete()
+                        }
+                    } else {
+                        java.io.File(track.contentUriString).delete()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            customMetadataRepo.resetToOriginal(track.id)
+
+            rawLocalTracks = rawLocalTracks.filter { it.id != track.id }
+            rawBundledTracks = rawBundledTracks.filter { it.id != track.id }
+
+            val updatedQueue = _uiState.value.queue.filter { it.id != track.id }
+            val isCurrentTrackDeleted = _uiState.value.currentTrack?.id == track.id
+
+            if (isCurrentTrackDeleted) {
+                if (updatedQueue.isNotEmpty()) {
+                    val nextTrack = updatedQueue.first()
+                    _uiState.value = _uiState.value.copy(
+                        queue = updatedQueue,
+                        currentTrack = nextTrack,
+                        queueIndex = 0,
+                        deletingTrackConfirm = null
+                    )
+                    playerManager.playTrack(nextTrack, 0L)
+                } else {
+                    playerManager.pause()
+                    _uiState.value = _uiState.value.copy(
+                        queue = emptyList(),
+                        currentTrack = null,
+                        queueIndex = 0,
+                        deletingTrackConfirm = null
+                    )
+                }
+            } else {
+                val newIndex = updatedQueue.indexOfFirst { it.id == _uiState.value.currentTrack?.id }.coerceAtLeast(0)
+                _uiState.value = _uiState.value.copy(
+                    queue = updatedQueue,
+                    queueIndex = newIndex,
+                    deletingTrackConfirm = null
+                )
+            }
+
             refreshTracksWithCustomMetadata()
         }
     }

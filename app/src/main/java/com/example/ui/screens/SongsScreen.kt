@@ -52,6 +52,7 @@ fun SongsScreen(
     onRequestScan: () -> Unit = {},
     onFilterChange: (String) -> Unit = {},
     onEditTrack: (Track) -> Unit = {},
+    onDeleteTrack: (Track) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val displayTracks = remember(uiState.queue, uiState.selectedTrackFilter) {
@@ -173,7 +174,7 @@ fun SongsScreen(
             contentPadding = PaddingValues(bottom = 120.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(displayTracks) { track ->
+            items(displayTracks, key = { it.id }) { track ->
                 val isCurrent = uiState.currentTrack?.id == track.id
                 val isCurrentPlaying = isCurrent && uiState.isPlaying
 
@@ -199,7 +200,8 @@ fun SongsScreen(
             onAddToQueue = { onAddToQueue(track) },
             onViewLyrics = { onViewLyrics(track) },
             onToggleFavorite = { onToggleFavorite(track.id) },
-            onEditTrack = { onEditTrack(track) }
+            onEditTrack = { onEditTrack(track) },
+            onDeletePermanently = { onDeleteTrack(track) }
         )
     }
 }

@@ -113,7 +113,6 @@ class Media3PlayerManager(private val context: Context) {
             nativeEqHelper.attachToAudioSession(player.audioSessionId)
         } catch (ignored: Exception) {}
 
-        // Set up PendingIntent to launch MainActivity from Lockscreen / Notification
         val intent = Intent(context, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             context,
@@ -152,10 +151,10 @@ class Media3PlayerManager(private val context: Context) {
                 _isPlaying.value = isPlaying
                 if (isPlaying) {
                     startProgressTracker()
-                    startForegroundPlaybackService()
                 } else {
                     stopProgressTracker()
                 }
+                notifyPlaybackService(isPlaying = isPlaying)
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -174,13 +173,35 @@ class Media3PlayerManager(private val context: Context) {
                     Player.STATE_IDLE, Player.STATE_BUFFERING -> {}
                 }
             }
+
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                error.printStackTrace()
+                _isPlaying.value = false
+                stopProgressTracker()
+                try {
+                    onTrackCompleted?.invoke()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         })
     }
 
-    private fun startForegroundPlaybackService() {
+    private fun notifyPlaybackService(
+        title: String? = null,
+        artist: String? = null,
+        artworkBytes: ByteArray? = null,
+        isPlaying: Boolean = _isPlaying.value
+    ) {
         try {
-            val serviceIntent = Intent(context, AuraPlaybackService::class.java)
-            ContextCompat.startForegroundService(context, serviceIntent)
+            val intent = Intent(context, AuraPlaybackService::class.java).apply {
+                action = AuraPlaybackService.ACTION_UPDATE_NOTIFICATION
+                if (!title.isNullOrBlank()) putExtra("title", title)
+                if (!artist.isNullOrBlank()) putExtra("artist", artist)
+                if (artworkBytes != null) putExtra("artwork", artworkBytes)
+                putExtra("isPlaying", isPlaying)
+            }
+            ContextCompat.startForegroundService(context, intent)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -200,7 +221,6 @@ class Media3PlayerManager(private val context: Context) {
                 else -> return
             }
 
-            // Initial MediaMetadata with title, artist, album
             val initialMetadata = MediaMetadata.Builder()
                 .setTitle(track.title)
                 .setArtist(track.artist)
@@ -230,9 +250,13 @@ class Media3PlayerManager(private val context: Context) {
             player.volume = 1.0f
             player.play()
 
-            startForegroundPlaybackService()
+            notifyPlaybackService(
+                title = track.title,
+                artist = "${track.artist} • ${track.album}",
+                artworkBytes = null,
+                isPlaying = true
+            )
 
-            // Asynchronously extract and attach high-res static artwork (including video frame extraction)
             artworkJob = scope.launch {
                 val artworkBytes = NotificationArtworkHelper.extractArtworkByteArray(context, track)
                 if (artworkBytes != null && artworkBytes.isNotEmpty()) {
@@ -252,6 +276,13 @@ class Media3PlayerManager(private val context: Context) {
                             .build()
 
                         player.replaceMediaItem(0, updatedMediaItem)
+
+                        notifyPlaybackService(
+                            title = track.title,
+                            artist = "${track.artist} • ${track.album}",
+                            artworkBytes = artworkBytes,
+                            isPlaying = true
+                        )
                     }
                 }
             }
@@ -259,6 +290,11 @@ class Media3PlayerManager(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
             _isPlaying.value = false
+            try {
+                onTrackCompleted?.invoke()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
         }
     }
 

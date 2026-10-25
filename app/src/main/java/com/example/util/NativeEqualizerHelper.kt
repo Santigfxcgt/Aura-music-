@@ -1,9 +1,11 @@
 package com.example.util
 
+import android.media.audiofx.AudioEffect
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.PresetReverb
 import android.media.audiofx.Virtualizer
+import android.util.Log
 
 class NativeEqualizerHelper {
 
@@ -12,29 +14,60 @@ class NativeEqualizerHelper {
     private var virtualizer: Virtualizer? = null
     private var presetReverb: PresetReverb? = null
 
+    private var areEffectsSupported: Boolean? = null
+
+    private fun checkEffectsSupport(): Boolean {
+        if (areEffectsSupported != null) return areEffectsSupported!!
+        areEffectsSupported = try {
+            val effects = AudioEffect.queryEffects()
+            effects != null && effects.isNotEmpty()
+        } catch (e: Exception) {
+            false
+        }
+        return areEffectsSupported!!
+    }
+
     fun attachToAudioSession(audioSessionId: Int) {
         if (audioSessionId == 0) return
+        if (!checkEffectsSupport()) {
+            return
+        }
+
         try {
             release()
 
-            equalizer = Equalizer(0, audioSessionId).apply {
-                enabled = true
+            try {
+                equalizer = Equalizer(0, audioSessionId).apply {
+                    enabled = true
+                }
+            } catch (ignored: Exception) {
+                equalizer = null
             }
 
-            bassBoost = BassBoost(0, audioSessionId).apply {
-                enabled = true
+            try {
+                bassBoost = BassBoost(0, audioSessionId).apply {
+                    enabled = true
+                }
+            } catch (ignored: Exception) {
+                bassBoost = null
             }
 
-            virtualizer = Virtualizer(0, audioSessionId).apply {
-                enabled = true
+            try {
+                virtualizer = Virtualizer(0, audioSessionId).apply {
+                    enabled = true
+                }
+            } catch (ignored: Exception) {
+                virtualizer = null
             }
 
-            presetReverb = PresetReverb(0, audioSessionId).apply {
-                enabled = true
+            try {
+                presetReverb = PresetReverb(0, audioSessionId).apply {
+                    enabled = true
+                }
+            } catch (ignored: Exception) {
+                presetReverb = null
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (ignored: Exception) {}
     }
 
     fun setEnabled(enabled: Boolean) {
@@ -43,9 +76,7 @@ class NativeEqualizerHelper {
             bassBoost?.enabled = enabled
             virtualizer?.enabled = enabled
             presetReverb?.enabled = enabled
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (ignored: Exception) {}
     }
 
     fun setBassBoostStrength(strengthPercent: Int) {
@@ -56,9 +87,7 @@ class NativeEqualizerHelper {
                     it.setStrength(strength)
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (ignored: Exception) {}
     }
 
     fun setVirtualizerStrength(strengthPercent: Int) {
@@ -69,9 +98,7 @@ class NativeEqualizerHelper {
                     it.setStrength(strength)
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (ignored: Exception) {}
     }
 
     fun setReverbPreset(presetName: String) {
@@ -86,9 +113,7 @@ class NativeEqualizerHelper {
                 }
                 it.preset = presetShort
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (ignored: Exception) {}
     }
 
     fun setBandGain(bandIndex: Int, gainDb: Float) {
@@ -105,9 +130,7 @@ class NativeEqualizerHelper {
                     eq.setBandLevel(bandShort, targetMilliBel)
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (ignored: Exception) {}
     }
 
     fun release() {
@@ -116,9 +139,7 @@ class NativeEqualizerHelper {
             bassBoost?.release()
             virtualizer?.release()
             presetReverb?.release()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
+        } catch (ignored: Exception) {} finally {
             equalizer = null
             bassBoost = null
             virtualizer = null

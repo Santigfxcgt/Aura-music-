@@ -83,6 +83,7 @@ fun HomeScreen(
     onRequestScanLocalAudio: () -> Unit,
     onFilterChange: (String) -> Unit,
     onEditTrack: (Track) -> Unit = {},
+    onDeleteTrack: (Track) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val quickPicks = remember(uiState.queue) {
@@ -416,7 +417,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(quickPicks) { track ->
+                        items(quickPicks, key = { it.id }) { track ->
                             QuickPickCard(
                                 track = track,
                                 isCurrent = uiState.currentTrack?.id == track.id,
@@ -458,7 +459,7 @@ fun HomeScreen(
                 }
             }
 
-            items(displayTracks) { track ->
+            items(displayTracks, key = { it.id }) { track ->
                 val isCurrent = uiState.currentTrack?.id == track.id
                 val isCurrentPlaying = isCurrent && uiState.isPlaying
 
@@ -484,7 +485,8 @@ fun HomeScreen(
             onAddToQueue = { onAddToQueue(track) },
             onViewLyrics = { onViewLyrics(track) },
             onToggleFavorite = { onToggleFavorite(track.id) },
-            onEditTrack = { onEditTrack(track) }
+            onEditTrack = { onEditTrack(track) },
+            onDeletePermanently = { onDeleteTrack(track) }
         )
     }
 }

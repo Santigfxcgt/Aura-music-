@@ -378,88 +378,21 @@ fun NowPlayingScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Playback Controls in Frosted Glass Capsule
-            GlassBox(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("now_playing_controls_container"),
-                shape = RoundedCornerShape(28.dp),
-                backgroundColor = Color(0x381E202B),
-                borderColor = GlassCardBorder,
-                borderWidth = 1.dp,
-                elevation = 14.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Previous Track Button
-                    IconButton(
-                        onClick = onPrevious,
-                        modifier = Modifier
-                            .size(52.dp)
-                            .testTag("now_playing_prev_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipPrevious,
-                            contentDescription = "Pista anterior",
-                            tint = Color.White,
-                            modifier = Modifier.size(34.dp)
-                        )
-                    }
-
-                    // Large Tactile Play/Pause Button (Apple Music Style)
-                    Box(
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                            .clickable(onClick = onPlayPause)
-                            .testTag("now_playing_play_pause_button"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) "Pausar" else "Reproducir",
-                            tint = Color(0xFF101014),
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-
-                    // Next Track Button
-                    IconButton(
-                        onClick = onNext,
-                        modifier = Modifier
-                            .size(52.dp)
-                            .testTag("now_playing_next_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipNext,
-                            contentDescription = "Siguiente pista",
-                            tint = Color.White,
-                            modifier = Modifier.size(34.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Bottom Buttons: Shuffle, Repeat, 'A continuación', 'Letras'
+            // 5-Button Inline Playback Controls Row (Matching Reference Layout)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(vertical = 8.dp)
+                    .testTag("now_playing_controls_container"),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Shuffle Button
+                // 1. Shuffle Button
                 IconButton(
                     onClick = onToggleShuffle,
-                    modifier = Modifier.testTag("now_playing_shuffle_button")
+                    modifier = Modifier
+                        .size(46.dp)
+                        .testTag("now_playing_shuffle_button")
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Shuffle,
@@ -469,10 +402,60 @@ fun NowPlayingScreen(
                     )
                 }
 
-                // Repeat Button
+                // 2. Previous Track Button
+                IconButton(
+                    onClick = onPrevious,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("now_playing_prev_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipPrevious,
+                        contentDescription = "Pista anterior",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // 3. Central Play / Pause Button
+                Box(
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .clickable(onClick = onPlayPause)
+                        .testTag("now_playing_play_pause_button"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                        tint = Color(0xFF101014),
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+                // 4. Next Track Button
+                IconButton(
+                    onClick = onNext,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("now_playing_next_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipNext,
+                        contentDescription = "Siguiente pista",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                // 5. Repeat Button
                 IconButton(
                     onClick = onCycleRepeat,
-                    modifier = Modifier.testTag("now_playing_repeat_button")
+                    modifier = Modifier
+                        .size(46.dp)
+                        .testTag("now_playing_repeat_button")
                 ) {
                     Icon(
                         imageVector = when (repeatMode) {
@@ -484,21 +467,70 @@ fun NowPlayingScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 }
+            }
 
-                // 'A continuación' (Queue Button)
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Bottom Row Capsules: Ecualizador, Cola de reproducción, Letras
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left Capsule: "Ecualizador"
                 GlassBox(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable(onClick = onOpenQueue)
-                        .testTag("now_playing_queue_button"),
-                    shape = RoundedCornerShape(16.dp),
+                        .weight(1f)
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .clickable(onClick = onOpenEqualizer)
+                        .testTag("now_playing_eq_button"),
+                    shape = RoundedCornerShape(24.dp),
                     backgroundColor = Color(0x33FFFFFF),
                     borderColor = GlassCardBorder,
                     borderWidth = 0.5.dp,
                     elevation = 4.dp
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Equalizer,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Ecualizador",
+                            color = TextPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                // Right Capsule: "Cola de reproducción"
+                GlassBox(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .clickable(onClick = onOpenQueue)
+                        .testTag("now_playing_queue_button"),
+                    shape = RoundedCornerShape(24.dp),
+                    backgroundColor = Color(0x33FFFFFF),
+                    borderColor = GlassCardBorder,
+                    borderWidth = 0.5.dp,
+                    elevation = 4.dp
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -509,7 +541,7 @@ fun NowPlayingScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "A continuación",
+                            text = "Cola de reproducción",
                             color = TextPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
@@ -517,36 +549,23 @@ fun NowPlayingScreen(
                     }
                 }
 
-                // 'Letras' (Lyrics Button)
-                GlassBox(
+                // Round Letras Button
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x33FFFFFF))
+                        .border(0.5.dp, GlassCardBorder, CircleShape)
                         .clickable(onClick = onOpenLyrics)
                         .testTag("now_playing_lyrics_button"),
-                    shape = RoundedCornerShape(16.dp),
-                    backgroundColor = Color(0x33FFFFFF),
-                    borderColor = GlassCardBorder,
-                    borderWidth = 0.5.dp,
-                    elevation = 4.dp
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Mic,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Letras",
-                            color = TextPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.Mic,
+                        contentDescription = "Letras",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }

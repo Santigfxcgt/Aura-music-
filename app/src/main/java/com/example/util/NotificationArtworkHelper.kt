@@ -65,11 +65,12 @@ object NotificationArtworkHelper {
                 return@withContext track.artworkByteArray
             }
 
-            // Case 4: Fallback Drawable Resource
-            val resId = if (track.artworkResId != 0) track.artworkResId else R.drawable.album_neon_city
-            val bitmap = BitmapFactory.decodeResource(context.resources, resId)
-            if (bitmap != null) {
-                return@withContext bitmapToByteArray(bitmap)
+            // Case 4: Fallback Drawable Resource if present
+            if (track.artworkResId != 0) {
+                val bitmap = BitmapFactory.decodeResource(context.resources, track.artworkResId)
+                if (bitmap != null) {
+                    return@withContext bitmapToByteArray(bitmap)
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()

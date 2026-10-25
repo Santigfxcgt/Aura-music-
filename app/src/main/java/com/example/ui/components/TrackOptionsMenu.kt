@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -48,7 +49,8 @@ fun TrackOptionsMenu(
     onAddToQueue: () -> Unit,
     onViewLyrics: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onEditTrack: () -> Unit = {}
+    onEditTrack: () -> Unit = {},
+    onDeletePermanently: () -> Unit = {}
 ) {
     DropdownMenu(
         expanded = expanded,
@@ -128,6 +130,16 @@ fun TrackOptionsMenu(
                 onToggleFavorite()
             }
         )
+
+        MenuItem(
+            text = "Eliminar permanentemente",
+            icon = Icons.Filled.DeleteForever,
+            tint = Color(0xFFEF4444),
+            onClick = {
+                onDismissRequest()
+                onDeletePermanently()
+            }
+        )
     }
 }
 
@@ -150,7 +162,7 @@ private fun MenuItem(
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = text,
-                    color = TextPrimary,
+                    color = if (tint == Color(0xFFEF4444)) Color(0xFFEF4444) else TextPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 )

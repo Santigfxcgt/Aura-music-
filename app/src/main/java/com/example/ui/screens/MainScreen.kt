@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,13 +14,34 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.ui.components.GlassBox
+import com.example.ui.theme.GlassCardBorder
+import com.example.ui.theme.GlassSurfaceElevated
+import com.example.ui.theme.TextMuted
+import com.example.ui.theme.TextPrimary
+import com.example.ui.theme.TextSecondary
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,16 +89,22 @@ fun MainScreen(
         viewModel.setStoragePermission(isGranted)
     }
 
-    val triggerScanAction = {
-        val isGranted = ContextCompat.checkSelfPermission(
-            context,
-            requiredPermission
-        ) == PackageManager.PERMISSION_GRANTED
-        if (isGranted) {
-            viewModel.scanLocalAudio()
-        } else {
-            permissionLauncher.launch(requiredPermission)
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (ignored: Exception) {}
+            viewModel.scanFolder(uri)
         }
+    }
+
+    val triggerFolderSelectAction = {
+        folderPickerLauncher.launch(null)
     }
 
     Box(
@@ -109,9 +137,10 @@ fun MainScreen(
                             onOpenSettings = { viewModel.setSettingsDialogVisible(true) },
                             onSearchQueryChange = { viewModel.setSearchQuery(it) },
                             onToggleSearch = { viewModel.setSearchActive(!uiState.isSearchActive) },
-                            onRequestScanLocalAudio = triggerScanAction,
+                            onRequestScanLocalAudio = triggerFolderSelectAction,
                             onFilterChange = { viewModel.setTrackFilter(it) },
-                            onEditTrack = { viewModel.setEditingTrack(it) }
+                            onEditTrack = { viewModel.setEditingTrack(it) },
+                            onDeleteTrack = { viewModel.requestDeleteTrackPermanently(it) }
                         )
                     }
 
@@ -125,9 +154,10 @@ fun MainScreen(
                                 viewModel.playTrack(it)
                                 viewModel.setLyricsVisible(true)
                             },
-                            onRequestScan = triggerScanAction,
+                            onRequestScan = triggerFolderSelectAction,
                             onFilterChange = { viewModel.setTrackFilter(it) },
-                            onEditTrack = { viewModel.setEditingTrack(it) }
+                            onEditTrack = { viewModel.setEditingTrack(it) },
+                            onDeleteTrack = { viewModel.requestDeleteTrackPermanently(it) }
                         )
                     }
 
@@ -137,7 +167,7 @@ fun MainScreen(
                             onTrackSelected = { viewModel.playTrack(it) },
                             onCreatePlaylist = { viewModel.createPlaylist(it) },
                             onDeletePlaylist = { viewModel.deletePlaylist(it) },
-                            onRequestScan = triggerScanAction
+                            onRequestScan = triggerFolderSelectAction
                         )
                     }
                 }
@@ -280,6 +310,61 @@ fun MainScreen(
                     viewModel.resetCustomTrack(trackToEdit.id)
                 }
             )
+        }
+
+        // Permanent Track Deletion Confirmation Dialog
+        uiState.deletingTrackConfirm?.let { trackToDelete ->
+            BasicAlertDialog(
+                onDismissRequest = { viewModel.cancelDeleteTrack() }
+            ) {
+                GlassBox(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    backgroundColor = GlassSurfaceElevated,
+                    borderColor = GlassCardBorder,
+                    borderWidth = 1.dp,
+                    elevation = 16.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(22.dp)
+                    ) {
+                        Text(
+                            text = "¿Eliminar canción permanentemente?",
+                            color = TextPrimary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Se eliminará el archivo \"${trackToDelete.title}\" de tu dispositivo. Esta acción no se puede deshacer.",
+                            color = TextSecondary,
+                            fontSize = 13.sp
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(
+                                onClick = { viewModel.cancelDeleteTrack() },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+                            ) {
+                                Text("Cancelar", color = TextMuted)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = { viewModel.confirmDeleteTrackPermanently() },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Eliminar", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
